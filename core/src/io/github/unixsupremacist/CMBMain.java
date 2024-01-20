@@ -4,6 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -12,11 +13,13 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.Map;
 
 import static com.badlogic.gdx.math.MathUtils.random;
 
@@ -27,15 +30,20 @@ public class CMBMain extends ApplicationAdapter {
 	static int y;
 	@Getter
 	static ArrayList<String> options = new ArrayList<>();
-	static HashMap<String, HashMap<String, Launcher>> menu = new HashMap<>();
+	static Map<String, Map<String, Launcher>> menu = new HashMap<>();
 	static ArrayList<String> submenus = new ArrayList<>();
-	ArrayList<String> debugs = new ArrayList<>();
+	public static ArrayList<String> debugs = new ArrayList<>();
 	InputHandler input = new InputHandler();
 	BitmapFont font;
 	Background background;
 	Texture defaultIcon;
 	static Music music;
 	String trackName;
+	@Getter
+	static Robot robot;
+	@Getter
+	static boolean appRunning;
+	@Getter @Setter static String mapping = "renpy";
 
 	public void playBGM(){
 		if (music != null){
@@ -53,19 +61,19 @@ public class CMBMain extends ApplicationAdapter {
 	}
 
 	public void populateMenus(){
-		HashMap<String, Launcher> launchers = new HashMap<>();
+		Map<String, Launcher> launchers = new HashMap<>();
 		launchers.put("retroarch", new ExternalLauncher(new Texture("retroarch.png"), "org.libretro.RetroArch"));
 		launchers.put("lutris", new ExternalLauncher(new Texture("lutris.png"), "lutris"));
 		launchers.put("jellyfin", new ExternalLauncher(new Texture("jellyfin.png"), "jellyfinmediaplayer"));
 		menu.put("Launchers", launchers);
-		HashMap<String, Launcher> launchers2 = new HashMap<>();
+		Map<String, Launcher> launchers2 = new HashMap<>();
 		launchers2.put("retroarch", new ExternalLauncher(new Texture("retroarch.png"), "org.libretro.RetroArch"));
 		launchers2.put("jellyfin", new ExternalLauncher(new Texture("jellyfin.png"), "jellyfinmediaplayer"));
 		menu.put("Launchers2", launchers2);
 		newRetrocore("GCN", "dolphin", "retroarch.png", ".nkit", "/run/media/unix/NVME/Games/Roms/Neoset/gcn/");
 		newRetrocore("Wii", "dolphin", "retroarch.png", ".nkit", "/run/media/unix/NVME/Games/Roms/Neoset/wii/phy/");
 		newRetrocore("SDC", "flycast", "retroarch.png", "", "/run/media/unix/NVME/Games/Roms/Neoset/sdc/");
-		HashMap<String, Launcher> sys = new HashMap<>();
+		Map<String, Launcher> sys = new HashMap<>();
 		sys.put("Exit", new Exiter(new Texture("retroarch.png")));
 		menu.put("System", sys);
 		for (String submenu : menu.keySet())
@@ -73,7 +81,7 @@ public class CMBMain extends ApplicationAdapter {
 	}
 
 	public void newRetrocore(String name, String core, String texture, String extension, String dir){
-		HashMap<String, Launcher> coremenu = new HashMap<>();
+		Map<String, Launcher> coremenu = new HashMap<>();
 		Texture icon;
 		ExternalLauncher launcher;
 
@@ -111,7 +119,12 @@ public class CMBMain extends ApplicationAdapter {
 		camera = new OrthographicCamera();
 		background = new Background(new Texture("bg.jpg"));
 		defaultIcon = new Texture("retroarch.png");
-		populateMenus();
+        try {
+            robot = new Robot();
+        } catch (AWTException e) {
+            throw new RuntimeException(e);
+        }
+        populateMenus();
 
 
 		batch = new SpriteBatch();
@@ -132,10 +145,22 @@ public class CMBMain extends ApplicationAdapter {
 
 	@Override
 	public void render () {
+		Controller controller = Controllers.getCurrent();
+
 		if (music == null){
 			playBGM();
-		} else if (!music.isPlaying()){
+		} else if (!music.isPlaying() && !appRunning){
 			playBGM();
+		}
+
+		if (controller != null){
+			Point location = MouseInfo.getPointerInfo().getLocation();
+			var axisLeftX = controller.getAxis(controller.getMapping().axisLeftX);
+			var axisLeftY = controller.getAxis(controller.getMapping().axisLeftY);
+
+
+			if (axisLeftX < -0.1f || axisLeftX > 0.1f || axisLeftY < -0.1f || axisLeftY > 0.1f)
+				robot.mouseMove((int) (location.x+(500 * axisLeftX * Gdx.graphics.getDeltaTime())), (int) (location.y+(500 * axisLeftY * Gdx.graphics.getDeltaTime())));
 		}
 
 		setupCamera();
@@ -213,16 +238,24 @@ public class CMBMain extends ApplicationAdapter {
 	}
 
 	public static void runExternalApp(ArrayList<String> commands){
-		try {
-			music.pause();
-			ProcessBuilder builder = new ProcessBuilder(commands);
-			Process process = builder.start();
-			process.waitFor();
-			music.play();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
+		if (!appRunning){
+			Thread thread = new Thread(() -> {
+				try {
+					music.pause();
+					ProcessBuilder builder = new ProcessBuilder(commands);
+					Process process = builder.start();
+					appRunning = true;
+					process.waitFor();
+					appRunning = false;
+					music.play();
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+			});
+
+			thread.start();
 		}
 	}
 	
