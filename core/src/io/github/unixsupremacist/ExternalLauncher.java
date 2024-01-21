@@ -1,5 +1,6 @@
 package io.github.unixsupremacist;
 
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 
 import java.util.ArrayList;
@@ -7,22 +8,22 @@ import java.util.ArrayList;
 public class ExternalLauncher extends Launcher{
     ArrayList<String> commands;
 
-    public ExternalLauncher(Texture texture, String command){
+    public ExternalLauncher(FileHandle texture, String command){
         this(texture, null, command);
     }
 
-    public ExternalLauncher(Texture texture, Background background, String command){
+    public ExternalLauncher(FileHandle texture, FileHandle background, String command){
         super(texture, background);
         ArrayList<String> commands = new ArrayList<>();
         commands.add(command);
         this.commands = commands;
     }
 
-    public ExternalLauncher(Texture texture, ArrayList<String> commands){
+    public ExternalLauncher(FileHandle texture, ArrayList<String> commands){
         this(texture, null, commands);
     }
 
-    public ExternalLauncher(Texture texture, Background background, ArrayList<String> commands){
+    public ExternalLauncher(FileHandle texture, FileHandle background, ArrayList<String> commands){
         super(texture, background);
         this.commands = commands;
     }

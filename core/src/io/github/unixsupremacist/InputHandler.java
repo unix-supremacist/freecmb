@@ -88,9 +88,11 @@ public class InputHandler implements InputProcessor, ControllerListener {
                 robot.keyPress(KeyEvent.VK_UP);
             if (keycode == controller.getMapping().buttonDpadDown)
                 robot.keyPress(KeyEvent.VK_DOWN);
-            if (keycode == controller.getMapping().buttonA)
-                robot.keyPress(KeyEvent.VK_ENTER);
             if (keycode == controller.getMapping().buttonB)
+                robot.keyPress(KeyEvent.VK_ENTER);
+            if (keycode == controller.getMapping().buttonA)
+                robot.keyPress(KeyEvent.VK_SPACE);
+            if (keycode == controller.getMapping().buttonX)
                 robot.keyPress(KeyEvent.VK_ESCAPE);
         } else {
             if (keycode == controller.getMapping().buttonDpadLeft)
@@ -121,9 +123,11 @@ public class InputHandler implements InputProcessor, ControllerListener {
             robot.keyRelease(KeyEvent.VK_UP);
         if (keycode == controller.getMapping().buttonDpadDown)
             robot.keyRelease(KeyEvent.VK_DOWN);
-        if (keycode == controller.getMapping().buttonA)
-            robot.keyRelease(KeyEvent.VK_ENTER);
         if (keycode == controller.getMapping().buttonB)
+            robot.keyRelease(KeyEvent.VK_ENTER);
+        if (keycode == controller.getMapping().buttonA)
+            robot.keyRelease(KeyEvent.VK_SPACE);
+        if (keycode == controller.getMapping().buttonX)
             robot.keyRelease(KeyEvent.VK_ESCAPE);
 
         return false;

@@ -14,23 +14,32 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.PNGTranscoder;
 
 import java.awt.*;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import static com.badlogic.gdx.math.MathUtils.random;
 
 public class CMBMain extends ApplicationAdapter {
 	SpriteBatch batch;
 	private OrthographicCamera camera;
-	static int x;
-	static int y;
+	static int x, y;
 	@Getter
 	static ArrayList<String> options = new ArrayList<>();
-	static Map<String, Map<String, Launcher>> menu = new HashMap<>();
+	public static Map<String, Map<String, Launcher>> menu = new HashMap<>();
 	static ArrayList<String> submenus = new ArrayList<>();
 	public static ArrayList<String> debugs = new ArrayList<>();
 	InputHandler input = new InputHandler();
@@ -39,11 +48,18 @@ public class CMBMain extends ApplicationAdapter {
 	Texture defaultIcon;
 	static Music music;
 	String trackName;
+	public static String StorageDirectory = "/home/unix/cmbtest/";
+	Map<String, String> installedFlatpaks;
 	@Getter
 	static Robot robot;
 	@Getter
 	static boolean appRunning;
 	@Getter @Setter static String mapping = "renpy";
+	FileHandle pathbg;
+	Background iconbg;
+	List<Texture> icons;
+	int lastX;
+
 
 	public void playBGM(){
 		if (music != null){
@@ -60,56 +76,46 @@ public class CMBMain extends ApplicationAdapter {
 		}
 	}
 
+	public void convertPNGS(String name){
+        try {
+			FileHandle out = Gdx.files.absolute(CMBMain.StorageDirectory+"flatpak"+name+".png");
+			FileHandle path = Gdx.files.absolute("/var/lib/flatpak/exports/share/icons/hicolor/scalable/apps/"+name+".svg");
+			if(!out.exists()){
+				if(path.exists()){
+					String svg_URI_input = Paths.get(path.path()).toUri().toURL().toString();
+					TranscoderInput input_svg_image = new TranscoderInput(svg_URI_input);
+					OutputStream png_ostream = new FileOutputStream(out.path());
+					TranscoderOutput output_png_image = new TranscoderOutput(png_ostream);
+					PNGTranscoder my_converter = new PNGTranscoder();
+					my_converter.transcode(input_svg_image, output_png_image);
+					png_ostream.flush();
+					png_ostream.close();
+				} else {
+					path = Gdx.files.absolute("/var/lib/flatpak/exports/share/icons/hicolor/512x512/apps/"+name+".png");
+					if (path.exists()){
+						path.copyTo(out);
+					} else {
+						path = Gdx.files.absolute("/var/lib/flatpak/exports/share/icons/hicolor/256x256/apps/"+name+".png");
+						if (path.exists()){
+							path.copyTo(out);
+						}
+					}
+				}
+			}
+        } catch (IOException | TranscoderException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 	public void populateMenus(){
-		Map<String, Launcher> launchers = new HashMap<>();
-		launchers.put("retroarch", new ExternalLauncher(new Texture("retroarch.png"), "org.libretro.RetroArch"));
-		launchers.put("lutris", new ExternalLauncher(new Texture("lutris.png"), "lutris"));
-		launchers.put("jellyfin", new ExternalLauncher(new Texture("jellyfin.png"), "jellyfinmediaplayer"));
-		menu.put("Launchers", launchers);
-		Map<String, Launcher> launchers2 = new HashMap<>();
-		launchers2.put("retroarch", new ExternalLauncher(new Texture("retroarch.png"), "org.libretro.RetroArch"));
-		launchers2.put("jellyfin", new ExternalLauncher(new Texture("jellyfin.png"), "jellyfinmediaplayer"));
-		menu.put("Launchers2", launchers2);
-		newRetrocore("GCN", "dolphin", "retroarch.png", ".nkit", "/run/media/unix/NVME/Games/Roms/Neoset/gcn/");
-		newRetrocore("Wii", "dolphin", "retroarch.png", ".nkit", "/run/media/unix/NVME/Games/Roms/Neoset/wii/phy/");
-		newRetrocore("SDC", "flycast", "retroarch.png", "", "/run/media/unix/NVME/Games/Roms/Neoset/sdc/");
+		Retroarch.populateCores();
+		menu.put("Flatpak", Flatpak.newFlatpakCore("retroarch.png"));
+
 		Map<String, Launcher> sys = new HashMap<>();
-		sys.put("Exit", new Exiter(new Texture("retroarch.png")));
+		sys.put("Exit", new Exiter(Gdx.files.internal("retroarch.png")));
 		menu.put("System", sys);
 		for (String submenu : menu.keySet())
 			submenus.add(submenu);
-	}
-
-	public void newRetrocore(String name, String core, String texture, String extension, String dir){
-		Map<String, Launcher> coremenu = new HashMap<>();
-		Texture icon;
-		ExternalLauncher launcher;
-
-		FileHandle handle = Gdx.files.absolute(dir);
-		if (handle.isDirectory()){
-			for (FileHandle rom : handle.list()){
-				FileHandle iconPath = Gdx.files.internal("tempiconcover/"+rom.nameWithoutExtension().replace(extension, "")+".png");
-				if (iconPath.exists()){
-					icon = new Texture(iconPath);
-				} else {
-					icon = new Texture(texture);
-				}
-
-				ArrayList<String> commands = new ArrayList<>();
-				commands.add("org.libretro.RetroArch");
-				commands.add("-L");
-				commands.add("/home/unix/.var/app/org.libretro.RetroArch/config/retroarch/cores/"+core+"_libretro.so");
-				commands.add(rom.path());
-				FileHandle bgPath = Gdx.files.internal("tempbackgroundcover/"+rom.nameWithoutExtension().replace(extension, "")+".jpg");
-				if(bgPath.exists()){
-					launcher = new ExternalLauncher(icon, new Background(new Texture(bgPath)), commands);
-				} else {
-					launcher = new ExternalLauncher(icon, commands);
-				}
-				coremenu.put(rom.nameWithoutExtension().replace(extension, ""), launcher);
-			}
-		}
-		menu.put(name, coremenu);
 	}
 
 	@Override
@@ -124,9 +130,9 @@ public class CMBMain extends ApplicationAdapter {
         } catch (AWTException e) {
             throw new RuntimeException(e);
         }
+		installedFlatpaks = Flatpak.getInstalled();
+		for (String id : installedFlatpaks.keySet()) convertPNGS(id);
         populateMenus();
-
-
 		batch = new SpriteBatch();
 		x = 0;
 		y = 0;
@@ -145,6 +151,7 @@ public class CMBMain extends ApplicationAdapter {
 
 	@Override
 	public void render () {
+
 		Controller controller = Controllers.getCurrent();
 
 		if (music == null){
@@ -179,60 +186,111 @@ public class CMBMain extends ApplicationAdapter {
 		for (String option : menu.get(submenus.get(x)).keySet()){
 			options.add(option);
 		}
-		Background iconbg = menu.get(submenus.get(x)).get(getOptions().get(y)).bg;
+
+
+		if (menu.get(submenus.get(x)).get(getOptions().get(y)).bg != null){
+			if (pathbg != menu.get(submenus.get(x)).get(getOptions().get(y)).bg){
+				pathbg = menu.get(submenus.get(x)).get(getOptions().get(y)).bg;
+				if(iconbg != null)
+					iconbg.dispose();
+				iconbg = new Background(new Texture(pathbg));
+			}
+		} else {
+			pathbg = null;
+			if(iconbg != null)
+				iconbg.dispose();
+			iconbg = null;
+		}
+
 		if (iconbg != null){
 			batch.draw(iconbg.getTexture(), iconbg.getX(), iconbg.getY(), iconbg.getWidth(), iconbg.getHeight());
 		} else {
 			batch.draw(background.getTexture(), background.getX(), background.getY(), background.getWidth(), background.getHeight());
 		}
+
 		batch.setColor(1, 1, 1, 1);
 
 
-		var i = 0;
 		var selsize = 96;
 		var unselsize = 64;
 		var gaps = selsize+(selsize/4);
 		var smallgap = selsize+(selsize/16);
 		var start = Gdx.graphics.getWidth() / 4 - gaps * 2;
 
-		for (String menu : submenus){
+		for (int i = 0; i < submenus.size(); i++){
 			if (i == x) {
 				batch.draw(defaultIcon, start + gaps * i - gaps * x, ((Gdx.graphics.getHeight() + gaps) / 2) + gaps, selsize, selsize);
 			} else {
+				if (i != x){
+					double a;
+					if(i > x){
+						a = 0.9 / 1 / Math.pow(1.1, i-x);
+					} else {
+						a = 0.9 / 1 / Math.pow(1.6, x-i);
+					}
+					batch.setColor(1, 1, 1, (float) a);
+				}
 				batch.draw(defaultIcon, start + 16 + gaps * i - gaps * x, ((Gdx.graphics.getHeight() + gaps) / 2) + gaps + 16, unselsize, unselsize);
+				batch.setColor(1, 1, 1, 1);
 			}
-			i++;
 		}
 
-		i = 0;
+		if (lastX != x){
+			lastX = x;
+			for (Texture icon : icons)
+				if(icon != null)
+					icon.dispose();
+			icons.clear();
+			icons = null;
+		}
 
-		for (Launcher launcher : menu.get(submenus.get(x)).values()){
+		if (icons == null){
+			icons = new ArrayList<>();
+
+			//for (Launcher launcher : menu.get(submenus.get(x)).values()){
+			for (int i = 0; i < menu.get(submenus.get(x)).size(); i++){
+				if(i < y-4 || i > y+7){
+					icons.add(null);
+				}else{
+					icons.add(new Texture(menu.get(submenus.get(x)).get(options.get(i)).getTexture()));
+				}
+			}
+		}
+
+
+		for (int i = 0; i < menu.get(submenus.get(x)).size(); i++){
+			Launcher launcher = menu.get(submenus.get(x)).get(options.get(i));
+			if (icons.get(i) == null) {
+				if (i > y-4 && i < y+7) icons.set(i, new Texture(launcher.getTexture()));
+				else continue;
+			}
 			if (i != y){
-				batch.setColor(1, 1, 1, 0.3f);
-				font.setColor(1, 1, 1, 0.3f);
+				double a;
+				if(i > y){
+					a = 0.9 / 1 / Math.pow(1.3, i-y);
+				} else {
+					a = 0.9 / 1 / Math.pow(1.6, y-i);
+				}
+				batch.setColor(1, 1, 1, (float) a);
+				font.setColor(1, 1, 1, (float) a);
 			}
 			if (i == y){
-				batch.draw(launcher.getTexture(), start, ((Gdx.graphics.getHeight() + smallgap + selsize - launcher.getHeight(selsize)) / 2) - smallgap*i + smallgap*y, launcher.getWidth(selsize), launcher.getHeight(selsize));
+				batch.draw(icons.get(i), start, ((Gdx.graphics.getHeight() + smallgap + selsize - launcher.getHeight(selsize, icons.get(i).getWidth(), icons.get(i).getHeight())) / 2) - smallgap*i + smallgap*y, launcher.getWidth(selsize, icons.get(i).getWidth(), icons.get(i).getHeight()), launcher.getHeight(selsize, icons.get(i).getWidth(), icons.get(i).getHeight()));
 				font.draw(batch, options.get(i), start + gaps, ((Gdx.graphics.getHeight() + smallgap) / 2) - smallgap*i + smallgap*y + smallgap/2);
 			} else if (i > y){
-				batch.draw(launcher.getTexture(), start + 16, ((Gdx.graphics.getHeight() + smallgap + unselsize - launcher.getHeight(unselsize)) / 2) + 16 - smallgap*i + smallgap*y, launcher.getWidth(unselsize), launcher.getHeight(unselsize));
+				batch.draw(icons.get(i), start + 16, ((Gdx.graphics.getHeight() + smallgap + unselsize - launcher.getHeight(unselsize, icons.get(i).getWidth(), icons.get(i).getHeight())) / 2) + 16 - smallgap*i + smallgap*y, launcher.getWidth(unselsize, icons.get(i).getWidth(), icons.get(i).getHeight()), launcher.getHeight(unselsize, icons.get(i).getWidth(), icons.get(i).getHeight()));
 				font.draw(batch, options.get(i), start + gaps, ((Gdx.graphics.getHeight() + smallgap) / 2) - smallgap*i + smallgap*y + smallgap/2);
 			} else {
-				batch.draw(launcher.getTexture(), start + 16, ((Gdx.graphics.getHeight() + smallgap + unselsize - launcher.getHeight(unselsize)) / 2) + 16  - smallgap*i + smallgap*y + gaps, launcher.getWidth(unselsize), launcher.getHeight(unselsize));
+				batch.draw(icons.get(i), start + 16, ((Gdx.graphics.getHeight() + smallgap + unselsize - launcher.getHeight(unselsize, icons.get(i).getWidth(), icons.get(i).getHeight())) / 2) + 16  - smallgap*i + smallgap*y + gaps, launcher.getWidth(unselsize, icons.get(i).getWidth(), icons.get(i).getHeight()), launcher.getHeight(unselsize, icons.get(i).getWidth(), icons.get(i).getHeight()));
 				font.draw(batch, options.get(i), start + gaps, ((Gdx.graphics.getHeight() + smallgap) / 2) - smallgap*i + smallgap*y + gaps + smallgap/2);
 			}
 
 			batch.setColor(1, 1, 1, 1);
 			font.setColor(1, 1, 1, 1);
-
-			i++;
 		}
 
-		i = 0;
-		for (String debug : debugs){
-			i++;
-			font.draw(batch, debug, 25, Gdx.graphics.getHeight() - (20*i));
-		}
+		for (int i = 0; i < debugs.size(); i++)
+			font.draw(batch, debugs.get(i), 25, Gdx.graphics.getHeight() - (20*i));
 		debugs.clear();
 		batch.end();
 	}

@@ -67,5 +67,6 @@ public class Background {
     }
 
     public void dispose(){
+        texture.dispose();
     }
 }

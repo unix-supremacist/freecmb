@@ -1,9 +1,10 @@
 package io.github.unixsupremacist;
 
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 
 public class Exiter extends Launcher{
-    public Exiter(Texture texture) {
+    public Exiter(FileHandle texture) {
         super(texture);
     }
 
