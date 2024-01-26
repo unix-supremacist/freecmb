@@ -1,7 +1,6 @@
 package io.github.unixsupremacist;
 
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Texture;
 
 import java.util.ArrayList;
 
@@ -31,6 +30,5 @@ public class ExternalLauncher extends Launcher{
     @Override
     public void run(){
         CMBMain.runExternalApp(commands);
-
     }
 }

@@ -1,13 +1,13 @@
 package io.github.unixsupremacist;
 
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Texture;
 import lombok.Getter;
 
 @Getter
 public class Launcher {
     FileHandle texture;
     FileHandle bg;
+    String controllerMapping;
 
     public Launcher(FileHandle texture){
         this(texture, null);
@@ -16,6 +16,7 @@ public class Launcher {
     public Launcher(FileHandle texture, FileHandle bg){
         this.texture = texture;
         this.bg = bg;
+        this.controllerMapping = null;
         //this.texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Nearest);
     }
 

@@ -80,20 +80,22 @@ public class InputHandler implements InputProcessor, ControllerListener {
         Robot robot = CMBMain.getRobot();
 
         if(CMBMain.isAppRunning()){
-            if (keycode == controller.getMapping().buttonDpadLeft)
-                robot.keyPress(KeyEvent.VK_LEFT);
-            if (keycode == controller.getMapping().buttonDpadRight)
-                robot.keyPress(KeyEvent.VK_RIGHT);
-            if (keycode == controller.getMapping().buttonDpadUp)
-                robot.keyPress(KeyEvent.VK_UP);
-            if (keycode == controller.getMapping().buttonDpadDown)
-                robot.keyPress(KeyEvent.VK_DOWN);
-            if (keycode == controller.getMapping().buttonB)
-                robot.keyPress(KeyEvent.VK_ENTER);
-            if (keycode == controller.getMapping().buttonA)
-                robot.keyPress(KeyEvent.VK_SPACE);
-            if (keycode == controller.getMapping().buttonX)
-                robot.keyPress(KeyEvent.VK_ESCAPE);
+            if(false){
+                if (keycode == controller.getMapping().buttonDpadLeft)
+                    robot.keyPress(KeyEvent.VK_LEFT);
+                if (keycode == controller.getMapping().buttonDpadRight)
+                    robot.keyPress(KeyEvent.VK_RIGHT);
+                if (keycode == controller.getMapping().buttonDpadUp)
+                    robot.keyPress(KeyEvent.VK_UP);
+                if (keycode == controller.getMapping().buttonDpadDown)
+                    robot.keyPress(KeyEvent.VK_DOWN);
+                if (keycode == controller.getMapping().buttonB)
+                    robot.keyPress(KeyEvent.VK_ENTER);
+                if (keycode == controller.getMapping().buttonA)
+                    robot.keyPress(KeyEvent.VK_SPACE);
+                if (keycode == controller.getMapping().buttonX)
+                    robot.keyPress(KeyEvent.VK_ESCAPE);
+            }
         } else {
             if (keycode == controller.getMapping().buttonDpadLeft)
                 CMBMain.x--;

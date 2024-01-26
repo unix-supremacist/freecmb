@@ -2,7 +2,6 @@ package io.github.unixsupremacist;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Texture;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -57,8 +56,8 @@ public class Flatpak {
         for (String flatpak : installedFlatpaks.keySet()){
             FileHandle iconPathSteamLogo = Gdx.files.absolute(CMBMain.StorageDirectory+"steamgrids/"+flatpak+"_logo.png");
             FileHandle iconPathSteamHero = Gdx.files.absolute(CMBMain.StorageDirectory+"steamgrids/"+flatpak+"_hero.png");
-            FileHandle iconPath = Gdx.files.absolute(CMBMain.StorageDirectory+"flatpak"+flatpak+".png");
-            if ((!iconPathSteamLogo.exists() || !iconPathSteamHero.exists())){
+            FileHandle iconPath = Gdx.files.absolute(CMBMain.StorageDirectory+"flatpak/"+flatpak+".png");
+            if (((!iconPathSteamLogo.exists() || !iconPathSteamHero.exists()) && CMBMain.config.steamgridEnabled)){
                 int id = Steamgrid.steamgridSearch(installedFlatpaks.get(flatpak));
 
                 if(id != 0){
@@ -94,6 +93,7 @@ public class Flatpak {
             commands.add("flatpak");
             commands.add("run");
             commands.add(flatpak);
+            System.out.println(commands);
             if(iconPathSteamHero.exists()){
                 launcher = new ExternalLauncher(icon, iconPathSteamHero, commands);
             } else {
@@ -138,9 +138,7 @@ public class Flatpak {
                 ProcessBuilder builder = new ProcessBuilder(commands);
                 Process process = builder.start();
                 process.waitFor();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -154,9 +152,7 @@ public class Flatpak {
             Process process = builder.start();
             process.waitFor();
             return IOUtils.readLines(process.getInputStream());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

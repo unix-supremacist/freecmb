@@ -59,12 +59,12 @@ project(":core") {
     dependencies {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion"
-        annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.4.2'
         api 'commons-io:commons-io:2.13.0'
         api 'com.google.code.gson:gson:2.10.1'
         api 'org.apache.xmlgraphics:batik-codec:1.17'
         api 'org.apache.xmlgraphics:batik-transcoder:1.9.1'
         compileOnly 'com.github.bsideup.jabel:jabel-javac-plugin:0.4.2'
+        annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.4.2'
         compileOnly 'org.projectlombok:lombok:1.18.30'
         annotationProcessor 'org.projectlombok:lombok:1.18.30'
 

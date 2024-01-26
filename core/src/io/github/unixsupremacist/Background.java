@@ -15,7 +15,7 @@ public class Background {
         this.relX = 0.5f;
         this.relY = 0.5f;
         this.texture = texture;
-        this.texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Nearest);
+        this.texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
     }
 
 
@@ -36,29 +36,26 @@ public class Background {
     }
 
     public float getWidth(){
-        if (isTall()){
+        if (isTall())
             return (float) (texture.getWidth() * Gdx.graphics.getHeight()) / texture.getHeight() ;
-        } else {
+        else
             return Gdx.graphics.getWidth();
-        }
     }
 
     public float getHeight(){
-        if (isTall()){
+        if (isTall())
             return Gdx.graphics.getHeight();
-        } else {
+        else
             return (float) (texture.getHeight() * Gdx.graphics.getWidth()) / texture.getWidth();
-        }
     }
 
     private boolean isTall(){
         float x = (float) Gdx.graphics.getWidth() / texture.getWidth();
         float y = (float) Gdx.graphics.getHeight() / texture.getHeight();
-        if (x > y){
+        if (x > y)
             return false;
-        } else {
+        else
             return true;
-        }
     }
 
     public void snapToScreenspace(){
